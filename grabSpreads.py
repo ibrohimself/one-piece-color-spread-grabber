@@ -1,6 +1,8 @@
 import os
 import requests
-import urllib.request
+
+from PIL import Image
+from io import BytesIO
 
 #Grabbing HTML from One Piece wiki's Color Spread page and splitting it into lines
 url = requests.get("https://onepiece.fandom.com/wiki/Category:Color_Spreads")
@@ -33,17 +35,30 @@ if not os.path.exists(desktop+"\Spreads"): os.mkdir(desktop+"\Spreads")
 #Download each image and save it to color spreads folder
 for line in links:
     imageName=line[line.find("Chapter"):line.find("png")+3]
+    
+    response = requests.get(line)
+    im = Image.open(BytesIO(response.content))
+    width, height = im.size
+    
+    #Resizes image so that it fits screen height
+    ratio=1080/height
+    newWidth=int(width*ratio)
+    im=im.resize((newWidth, 1080), Image.ANTIALIAS)
+        
+    img=Image.new(mode="RGB", size=(1920,1080), color=(255,255,255))
+    img.paste(im, box=(int((1920-newWidth)/2),0))
     saveToURL=desktop+"\Spreads\\"+imageName
-    #print(saveToURL)
-    urllib.request.urlretrieve(line, saveToURL)
+    print(saveToURL)
+    
+    img.save(saveToURL, quality=90)
+    
     print("Downloaded " + imageName + "...")
-
+    
 #Complete message
 print("Done.")
 
 """
 To add:
-        - Use PIL to size the spreads to the computer's dimensions to avoid cropping
-        - Create a border around the images with a gradient based on color images so that they all fit nicely
+        - Linear gradient background based on average colors
         - Allow non-Windows users to use it
 """
